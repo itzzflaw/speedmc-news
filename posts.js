@@ -13,6 +13,6 @@ const posts = [
     tag: "news",
     server: "network",
     author: "flawo_o",
-    date: "June 11, 2026"
+    date: "6/11/2026 3:37 AM CST."
   }
 ];
