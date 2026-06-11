@@ -1,11 +1,12 @@
-{
-  title: "OneBlock Revamp — Releasing June 20, 2026",
-  description: "OneBlock is getting a full revamp with new custom sets, reworked dungeons, a brand new island top points system, and monthly Buycraft prizes up to $300. Releasing June 20 at 3 PM EST.",
-  tag: "update",
-  server: "oneblock",
-  author: "flaw",
-  date: "June 11, 2026",
-  body: `## What's Changed
+const posts = [
+  {
+    title: "OneBlock Revamp — Releasing June 20, 2026",
+    description: "OneBlock is getting a full revamp with new custom sets, reworked dungeons, a brand new island top points system, and monthly Buycraft prizes up to $300. Releasing June 20 at 3 PM EST.",
+    tag: "update",
+    server: "oneblock",
+    author: "flaw",
+    date: "June 11, 2026",
+    body: `## What's Changed
 - New custom sets added
 - Buffed DarkZone rewards
 - New rewards in DarkZone
@@ -39,4 +40,5 @@ If you have any questions regarding the reset, feel free to open a ticket in our
 Releasing **June 20, 2026 at 3 PM EST** — play.mc-speed.com
 
 🛒 store.mc-speed.com`
-},
+  }
+];
