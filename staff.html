@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SpeedMC — Staff</title>
+<link rel="icon" type="image/x-icon" href="favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="/" class="nav-brand">
+      <img src="logo.png" alt="SpeedMC">
+      <span>Speed<b>MC</b></span>
+    </a>
+    <div class="nav-links">
+      <a href="index.html#servers">Servers</a>
+      <a href="index.html#news">News</a>
+      <a href="staff.html" class="active">Staff</a>
+      <a href="https://discord.gg/speedmc" target="_blank">Discord</a>
+      <a href="https://store.mc-speed.com" target="_blank">Store</a>
+      <a href="login.html" class="nav-login">Log In</a>
+      <a class="nav-cta" onclick="copyIP(this)">play.mc-speed.com</a>
+    </div>
+  </div>
+</nav>
+
+<div class="page-header">
+  <div class="eyebrow">The team</div>
+  <h1>Staff Directory</h1>
+  <p>Meet the people keeping the network running — moderating, building, and shipping new features every week.</p>
+</div>
+
+<section class="section" id="staff-list"></section>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <img src="logo.png" alt="SpeedMC">
+      <span>Speed<b>MC</b></span>
+    </div>
+    <div class="footer-links">
+      <a href="staff.html">Staff</a>
+      <a href="https://discord.gg/speedmc" target="_blank">Discord</a>
+      <a href="https://store.mc-speed.com" target="_blank">Store</a>
+      <span>play.mc-speed.com</span>
+      <span>© 2026 SpeedMC</span>
+    </div>
+  </div>
+</footer>
+
+<script src="staff.js"></script>
+<script src="app.js"></script>
+<script>
+function skinBody(username, size){
+  return `https://mc-heads.net/body/${encodeURIComponent(username)}/${size}`;
+}
+
+function renderStaff(){
+  const container = document.getElementById('staff-list');
+  container.innerHTML = '';
+
+  staffCategories.forEach(category => {
+    if (!category.members || category.members.length === 0) return;
+
+    const section = document.createElement('div');
+    section.className = 'staff-category';
+
+    const head = document.createElement('div');
+    head.className = 'staff-category-head';
+    head.innerHTML = `
+      <span class="staff-category-bar ${category.key}"></span>
+      <h2>${category.name}</h2>
+    `;
+    section.appendChild(head);
+
+    const grid = document.createElement('div');
+    grid.className = 'staff-grid';
+
+    category.members.forEach(member => {
+      const card = document.createElement('div');
+      card.className = 'staff-card';
+      card.innerHTML = `
+        <img src="${skinBody(member.username, 200)}" alt="${member.displayName || member.username}" loading="lazy">
+        <div class="staff-card-name">${member.displayName || member.username}</div>
+        <span class="rank-badge ${rankClassMap[category.key] || ''}">${category.name}</span>
+      `;
+      grid.appendChild(card);
+    });
+
+    section.appendChild(grid);
+    container.appendChild(section);
+  });
+}
+
+renderStaff();
+</script>
+</body>
+</html>

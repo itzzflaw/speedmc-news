@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SpeedMC — Staff Dashboard</title>
+<link rel="icon" type="image/x-icon" href="favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="/" class="nav-brand">
+      <img src="logo.png" alt="SpeedMC">
+      <span>Speed<b>MC</b></span>
+    </a>
+    <div class="nav-links">
+      <a href="index.html#servers">Servers</a>
+      <a href="index.html#news">News</a>
+      <a href="staff.html">Staff</a>
+      <a href="https://discord.gg/speedmc" target="_blank">Discord</a>
+      <a class="nav-cta" onclick="copyIP(this)">play.mc-speed.com</a>
+    </div>
+  </div>
+</nav>
+
+<div id="loading-section" class="section">
+  <div class="account-empty">Loading…</div>
+</div>
+
+<div id="denied-section" class="access-denied" style="display:none">
+  <div class="eyebrow">Staff only</div>
+  <h1>Access Denied</h1>
+  <p>This page is only available to staff members. If you think this is a mistake, contact a manager.</p>
+  <a class="btn-discord" href="account.html" style="display:inline-flex">Back to Account</a>
+</div>
+
+<div id="dashboard-section" style="display:none">
+  <div class="page-header">
+    <div class="eyebrow">Staff Dashboard</div>
+    <h1>Moderation Tools</h1>
+    <p>Player lookups and punishment actions run live against the network via RCON.</p>
+  </div>
+
+  <section class="section">
+    <div class="dashboard-grid">
+
+      <div class="dashboard-card full">
+        <h3>Player Lookup</h3>
+        <div class="muted">Look up a player's skin, UUID, and recent punishment history.</div>
+        <div class="dashboard-form">
+          <div class="dashboard-form-row">
+            <input type="text" id="lookup-username" placeholder="Minecraft username" maxlength="16">
+            <button class="btn-small" id="lookup-btn" style="flex:0 0 auto">Lookup</button>
+          </div>
+        </div>
+        <div id="lookup-result" class="lookup-result" style="display:none">
+          <img id="lookup-skin" src="" alt="">
+          <div style="flex:1">
+            <div style="font-family:'Sora',sans-serif;font-weight:700;font-size:15px;margin-bottom:2px" id="lookup-name"></div>
+            <div class="muted" style="margin-bottom:10px;font-size:12px" id="lookup-uuid"></div>
+            <div class="lookup-history" id="lookup-history">—</div>
+          </div>
+        </div>
+        <div id="lookup-error" class="action-output error" style="display:none"></div>
+      </div>
+
+      <div class="dashboard-card">
+        <h3>Punish Player</h3>
+        <div class="muted">Ban, mute, or warn — runs the LiteBans command on the network.</div>
+        <div class="dashboard-form">
+          <div>
+            <label>Username</label>
+            <input type="text" id="punish-username" placeholder="Minecraft username" maxlength="16">
+          </div>
+          <div class="dashboard-form-row">
+            <div>
+              <label>Action</label>
+              <select id="punish-action">
+                <option value="ban">Ban</option>
+                <option value="mute">Mute</option>
+                <option value="warn">Warn</option>
+              </select>
+            </div>
+            <div id="punish-duration-wrap">
+              <label>Duration</label>
+              <input type="text" id="punish-duration" placeholder="e.g. 1d, 2h (blank = permanent)">
+            </div>
+          </div>
+          <div>
+            <label>Reason</label>
+            <input type="text" id="punish-reason" placeholder="Reason for this action">
+          </div>
+          <button class="btn-small" id="punish-btn">Execute</button>
+        </div>
+        <div id="punish-output" class="action-output" style="display:none"></div>
+      </div>
+
+      <div class="dashboard-card">
+        <h3>Kick / Remove Punishment</h3>
+        <div class="muted">Kick a player, or remove an active ban/mute.</div>
+        <div class="dashboard-form">
+          <div>
+            <label>Username</label>
+            <input type="text" id="quick-username" placeholder="Minecraft username" maxlength="16">
+          </div>
+          <div class="dashboard-form-row">
+            <div>
+              <label>Action</label>
+              <select id="quick-action">
+                <option value="kick">Kick</option>
+                <option value="unban">Unban</option>
+                <option value="unmute">Unmute</option>
+              </select>
+            </div>
+            <div>
+              <label>Reason (optional)</label>
+              <input type="text" id="quick-reason" placeholder="Reason">
+            </div>
+          </div>
+          <button class="btn-small" id="quick-btn">Execute</button>
+        </div>
+        <div id="quick-output" class="action-output" style="display:none"></div>
+      </div>
+
+      <div class="dashboard-card full">
+        <div class="tickets-card-head">
+          <div>
+            <h3>Support Tickets</h3>
+            <div class="muted" style="margin-bottom:0">Currently open tickets, synced from Discord every minute.</div>
+          </div>
+          <span class="tickets-count" id="tickets-count" style="display:none"></span>
+        </div>
+        <div class="ticket-filters" id="ticket-filters" style="display:none"></div>
+        <div id="tickets-loading" class="account-empty">Loading tickets…</div>
+        <div id="tickets-empty" class="account-empty" style="display:none">No open tickets right now.</div>
+        <div id="tickets-error" class="action-output error" style="display:none"></div>
+        <div id="tickets-list" class="tickets-list"></div>
+      </div>
+
+    </div>
+  </section>
+</div>
+
+<div id="ticket-modal" class="modal-overlay" style="display:none">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-header-info">
+        <span class="rank-badge" id="modal-type-badge"></span>
+        <div>
+          <div class="modal-title" id="modal-ticket-name">—</div>
+          <div class="modal-subtitle" id="modal-ticket-meta"></div>
+        </div>
+      </div>
+      <div class="modal-header-actions">
+        <a id="modal-discord-link" href="#" target="_blank" class="ticket-btn ticket-btn-ghost">Discord ↗</a>
+        <button class="modal-close" id="modal-close-btn">&times;</button>
+      </div>
+    </div>
+    <div class="modal-messages" id="modal-messages"></div>
+    <div class="modal-reply">
+      <textarea id="reply-text" placeholder="Reply to this ticket…" rows="1"></textarea>
+      <button class="modal-send-btn" id="reply-send-btn" title="Send (Enter)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+    <div id="reply-error" class="action-output error" style="display:none;margin:0 20px 14px"></div>
+  </div>
+</div>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <img src="logo.png" alt="SpeedMC">
+      <span>Speed<b>MC</b></span>
+    </div>
+    <div class="footer-links">
+      <a href="staff.html">Staff</a>
+      <a href="https://discord.gg/speedmc" target="_blank">Discord</a>
+      <a href="https://store.mc-speed.com" target="_blank">Store</a>
+      <span>play.mc-speed.com</span>
+      <span>© 2026 SpeedMC</span>
+    </div>
+  </div>
+</footer>
+
+<script src="app.js"></script>
+<script>
+async function init(){
+  let data;
+  try {
+    const res = await fetch('/api/me');
+    data = await res.json();
+  } catch {
+    document.getElementById('loading-section').innerHTML =
+      '<div class="account-empty">Could not reach the server. Try refreshing.</div>';
+    return;
+  }
+
+  if (!data.user || data.user.role === 'member') {
+    document.getElementById('loading-section').style.display = 'none';
+    document.getElementById('denied-section').style.display = 'block';
+    return;
+  }
+
+  document.getElementById('loading-section').style.display = 'none';
+  document.getElementById('dashboard-section').style.display = 'block';
+
+  loadTickets();
+}
+
+const ticketTypeStyles = {
+  "oneblock": { label: "OneBlock", cls: "rank-manager" },
+  "oneblock-1": { label: "OneBlock", cls: "rank-manager" },
+  "buycraft": { label: "Buycraft", cls: "rank-owner" },
+  "discord": { label: "Discord", cls: "rank-moderator" },
+  "appeal": { label: "Appeal", cls: "rank-developer" },
+  "player-report": { label: "Player Report", cls: "rank-admin" },
+  "prison": { label: "Prison", cls: "rank-helper" },
+  "smp": { label: "SMP", cls: "rank-trial-helper" }
+};
+
+function ticketStyle(type){
+  return ticketTypeStyles[type] || { label: type, cls: "rank-trial-helper" };
+}
+
+function fmtRelative(ts){
+  const diff = Date.now() - ts;
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  return `${Math.floor(hours / 24)}d ago`;
+}
+
+let allTickets = [];
+let activeTicketFilter = 'all';
+
+async function loadTickets(){
+  const loadingEl = document.getElementById('tickets-loading');
+  const errorEl = document.getElementById('tickets-error');
+
+  try {
+    const res = await fetch('/api/staff/tickets');
+    const data = await res.json();
+    loadingEl.style.display = 'none';
+
+    if (!res.ok) {
+      errorEl.textContent = data.error || 'Could not load tickets.';
+      errorEl.style.display = 'block';
+      return;
+    }
+
+    allTickets = data.tickets || [];
+
+    if (allTickets.length > 0) {
+      const countEl = document.getElementById('tickets-count');
+      countEl.textContent = `${allTickets.length} open`;
+      countEl.style.display = 'inline-flex';
+    }
+
+    renderTicketFilters();
+    renderTicketRows();
+  } catch {
+    loadingEl.style.display = 'none';
+    errorEl.textContent = 'Could not reach the server.';
+    errorEl.style.display = 'block';
+  }
+}
+
+function renderTicketFilters(){
+  const filtersEl = document.getElementById('ticket-filters');
+  if (allTickets.length === 0) return;
+
+  const counts = {};
+  allTickets.forEach(t => { counts[t.type] = (counts[t.type] || 0) + 1; });
+
+  let html = `<button class="filter-btn ${activeTicketFilter === 'all' ? 'active' : ''}" data-filter="all">All (${allTickets.length})</button>`;
+  Object.keys(counts).forEach(type => {
+    const style = ticketStyle(type);
+    html += `<button class="filter-btn ${activeTicketFilter === type ? 'active' : ''}" data-filter="${type}">${style.label} (${counts[type]})</button>`;
+  });
+
+  filtersEl.innerHTML = html;
+  filtersEl.style.display = 'flex';
+  filtersEl.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      activeTicketFilter = btn.dataset.filter;
+      renderTicketFilters();
+      renderTicketRows();
+    });
+  });
+}
+
+function renderTicketRows(){
+  const listEl = document.getElementById('tickets-list');
+  const emptyEl = document.getElementById('tickets-empty');
+  listEl.innerHTML = '';
+
+  const filtered = activeTicketFilter === 'all'
+    ? allTickets
+    : allTickets.filter(t => t.type === activeTicketFilter);
+
+  if (filtered.length === 0) {
+    emptyEl.textContent = allTickets.length === 0 ? 'No open tickets right now.' : 'No tickets match this filter.';
+    emptyEl.style.display = 'block';
+    return;
+  }
+  emptyEl.style.display = 'none';
+
+  filtered.forEach(t => {
+    const row = document.createElement('div');
+    row.className = 'ticket-row';
+    const style = ticketStyle(t.type);
+    const link = t.guild_id
+      ? `https://discord.com/channels/${t.guild_id}/${t.channel_id}`
+      : '#';
+
+    row.innerHTML = `
+      <span class="rank-badge ${style.cls}">${style.label}</span>
+      <div class="ticket-row-info">
+        <div class="ticket-row-name">${t.channel_name}</div>
+        <div class="ticket-row-meta">${t.discord_username || t.discord_id} · ${fmtRelative(t.created_at)}</div>
+      </div>
+      <div class="ticket-row-actions">
+        <button class="ticket-btn">Reply</button>
+        <a href="${link}" target="_blank" class="ticket-btn ticket-btn-ghost">Discord ↗</a>
+      </div>
+    `;
+    row.querySelector('.ticket-btn').addEventListener('click', () => openTicketModal(t));
+    listEl.appendChild(row);
+  });
+}
+
+// Hide duration field for Warn (no duration concept)
+document.getElementById('punish-action').addEventListener('change', (e) => {
+  document.getElementById('punish-duration-wrap').style.display =
+    e.target.value === 'warn' ? 'none' : 'block';
+});
+
+document.getElementById('lookup-btn').addEventListener('click', async () => {
+  const username = document.getElementById('lookup-username').value.trim();
+  const errorEl = document.getElementById('lookup-error');
+  const resultEl = document.getElementById('lookup-result');
+  errorEl.style.display = 'none';
+  resultEl.style.display = 'none';
+  if (!username) return;
+
+  try {
+    const res = await fetch('/api/staff/lookup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      errorEl.textContent = data.error || 'Lookup failed.';
+      errorEl.style.display = 'block';
+      return;
+    }
+
+    document.getElementById('lookup-skin').src = `https://mc-heads.net/body/${encodeURIComponent(data.username)}/100`;
+    document.getElementById('lookup-name').textContent = data.username;
+    document.getElementById('lookup-uuid').textContent = data.uuid || 'UUID unavailable';
+    document.getElementById('lookup-history').textContent =
+      data.history || data.historyError || 'No history returned.';
+    resultEl.style.display = 'flex';
+  } catch {
+    errorEl.textContent = 'Could not reach the server.';
+    errorEl.style.display = 'block';
+  }
+});
+
+async function runAction(payload, outputElId, btn, originalLabel){
+  const outputEl = document.getElementById(outputElId);
+  outputEl.style.display = 'block';
+  outputEl.className = 'action-output';
+  outputEl.textContent = 'Running…';
+  btn.disabled = true;
+
+  try {
+    const res = await fetch('/api/staff/punish', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      outputEl.className = 'action-output error';
+      outputEl.textContent = data.error || 'Action failed.';
+    } else {
+      outputEl.className = 'action-output success';
+      outputEl.textContent = `> ${data.command}\n${data.output || '(no output)'}`;
+    }
+  } catch {
+    outputEl.className = 'action-output error';
+    outputEl.textContent = 'Could not reach the server.';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = originalLabel;
+  }
+}
+
+document.getElementById('punish-btn').addEventListener('click', () => {
+  const btn = document.getElementById('punish-btn');
+  runAction({
+    action: document.getElementById('punish-action').value,
+    username: document.getElementById('punish-username').value.trim(),
+    reason: document.getElementById('punish-reason').value.trim(),
+    duration: document.getElementById('punish-duration').value.trim()
+  }, 'punish-output', btn, 'Execute');
+  btn.textContent = 'Running…';
+});
+
+document.getElementById('quick-btn').addEventListener('click', () => {
+  const btn = document.getElementById('quick-btn');
+  runAction({
+    action: document.getElementById('quick-action').value,
+    username: document.getElementById('quick-username').value.trim(),
+    reason: document.getElementById('quick-reason').value.trim()
+  }, 'quick-output', btn, 'Execute');
+  btn.textContent = 'Running…';
+});
+
+// ───────── TICKET CONVERSATION MODAL ─────────
+let activeChannelId = null;
+
+function fmtTime(iso){
+  return new Date(iso).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+}
+
+function escapeHtml(str){
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function messagesSkeleton(){
+  return `
+    <div class="msg-skeleton"><div class="skel-avatar"></div><div class="skel-lines"><div class="skel-line w40"></div><div class="skel-line w80"></div></div></div>
+    <div class="msg-skeleton"><div class="skel-avatar"></div><div class="skel-lines"><div class="skel-line w30"></div><div class="skel-line w60"></div></div></div>
+    <div class="msg-skeleton"><div class="skel-avatar"></div><div class="skel-lines"><div class="skel-line w40"></div><div class="skel-line w50"></div></div></div>
+  `;
+}
+
+async function openTicketModal(ticket){
+  activeChannelId = ticket.channel_id;
+  const style = ticketStyle(ticket.type);
+
+  document.getElementById('modal-type-badge').className = `rank-badge ${style.cls}`;
+  document.getElementById('modal-type-badge').textContent = style.label;
+  document.getElementById('modal-ticket-name').textContent = ticket.channel_name;
+  document.getElementById('modal-ticket-meta').textContent =
+    `Opened by ${ticket.discord_username || ticket.discord_id} · ${fmtRelative(ticket.created_at)}`;
+  document.getElementById('modal-discord-link').href = ticket.guild_id
+    ? `https://discord.com/channels/${ticket.guild_id}/${ticket.channel_id}`
+    : '#';
+
+  const replyText = document.getElementById('reply-text');
+  replyText.value = '';
+  replyText.style.height = 'auto';
+  document.getElementById('reply-error').style.display = 'none';
+  document.getElementById('ticket-modal').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+
+  await loadTicketMessages();
+  replyText.focus();
+}
+
+async function loadTicketMessages(){
+  const messagesEl = document.getElementById('modal-messages');
+  messagesEl.innerHTML = messagesSkeleton();
+
+  try {
+    const res = await fetch(`/api/staff/ticket-messages?channel_id=${encodeURIComponent(activeChannelId)}`);
+    const data = await res.json();
+    if (!res.ok) {
+      messagesEl.innerHTML = `<div class="account-empty">${data.error || 'Could not load messages.'}</div>`;
+      return;
+    }
+    if (!data.messages || data.messages.length === 0) {
+      messagesEl.innerHTML = '<div class="account-empty">No messages yet.</div>';
+      return;
+    }
+    messagesEl.innerHTML = data.messages.map(m => `
+      <div class="ticket-msg ${m.bot ? 'bot' : ''}">
+        <img src="${m.avatar}" alt="">
+        <div class="ticket-msg-body">
+          <div class="ticket-msg-head"><span class="ticket-msg-author">${escapeHtml(m.author)}</span><span class="ticket-msg-time">${fmtTime(m.timestamp)}</span></div>
+          ${m.content ? `<div class="ticket-msg-content">${escapeHtml(m.content)}</div>` : ''}
+          ${m.embeds.map(e => `<div class="ticket-msg-embed">${e.title ? `<strong>${escapeHtml(e.title)}</strong><br>` : ''}${e.description ? escapeHtml(e.description) : ''}</div>`).join('')}
+        </div>
+      </div>
+    `).join('');
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  } catch {
+    messagesEl.innerHTML = '<div class="account-empty">Could not reach the server.</div>';
+  }
+}
+
+function closeTicketModal(){
+  document.getElementById('ticket-modal').style.display = 'none';
+  document.body.style.overflow = '';
+  activeChannelId = null;
+}
+
+document.getElementById('modal-close-btn').addEventListener('click', closeTicketModal);
+document.getElementById('ticket-modal').addEventListener('click', (e) => {
+  if (e.target.id === 'ticket-modal') closeTicketModal();
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && activeChannelId) closeTicketModal();
+});
+
+// Auto-resize the reply textarea as the staff member types
+const replyTextEl = document.getElementById('reply-text');
+replyTextEl.addEventListener('input', () => {
+  replyTextEl.style.height = 'auto';
+  replyTextEl.style.height = Math.min(replyTextEl.scrollHeight, 120) + 'px';
+});
+
+// Enter sends, Shift+Enter inserts a newline
+replyTextEl.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendReply();
+  }
+});
+
+document.getElementById('reply-send-btn').addEventListener('click', sendReply);
+
+async function sendReply(){
+  const text = document.getElementById('reply-text').value.trim();
+  const errorEl = document.getElementById('reply-error');
+  const btn = document.getElementById('reply-send-btn');
+  errorEl.style.display = 'none';
+  if (!text || !activeChannelId) return;
+
+  btn.disabled = true;
+
+  try {
+    const res = await fetch('/api/staff/ticket-reply', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ channel_id: activeChannelId, message: text })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      errorEl.textContent = data.error || 'Could not send reply.';
+      errorEl.style.display = 'block';
+      return;
+    }
+    const replyText = document.getElementById('reply-text');
+    replyText.value = '';
+    replyText.style.height = 'auto';
+    await loadTicketMessages();
+  } catch {
+    errorEl.textContent = 'Could not reach the server.';
+    errorEl.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+init();
+</script>
+</body>
+</html>

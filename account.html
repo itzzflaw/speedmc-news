@@ -1,0 +1,15 @@
+// GET /api/staff/tickets
+// Staff-only. Returns currently open tickets, most recent first.
+
+import { requireStaff, json } from "../../_lib/auth.js";
+
+export async function onRequestGet({ request, env }) {
+  const staff = await requireStaff(request, env);
+  if (!staff) return json({ error: "Staff access required." }, 403);
+
+  const { results } = await env.DB.prepare(
+    "SELECT * FROM tickets WHERE open = 1 ORDER BY created_at DESC LIMIT 100"
+  ).all();
+
+  return json({ tickets: results || [] });
+}
