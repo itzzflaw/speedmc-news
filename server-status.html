@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Server Status — SpeedMC Staff</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="app-shell">
+  <div id="sidebar-mount"></div>
+  <div class="main">
+    <div id="topbar-mount"></div>
+    <div class="content">
+
+      <div class="page-title">Server Status</div>
+      <div class="page-sub">Live player counts and TPS for every SpeedMC server.</div>
+
+      <div class="stats-row">
+        <div class="panel stat-card">
+          <div class="stat-card-head">
+            <div class="stat-card-icon green">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><circle cx="9" cy="8" r="3" stroke="currentColor" stroke-width="1.6"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="17" cy="8" r="2.5" stroke="currentColor" stroke-width="1.6"/><path d="M15.5 14.3c2.6.4 4.5 2.6 4.5 5.7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+            </div>
+          </div>
+          <div class="stat-card-value" id="stat-total-players">—</div>
+          <div class="stat-card-label">Players Online</div>
+        </div>
+
+        <div class="panel stat-card">
+          <div class="stat-card-head">
+            <div class="stat-card-icon blue">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M3 12h4l2-7 4 14 2-7h6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+          </div>
+          <div class="stat-card-value" id="stat-online-count">—</div>
+          <div class="stat-card-label">Servers Online</div>
+        </div>
+
+        <div class="panel stat-card">
+          <div class="stat-card-head">
+            <div class="stat-card-icon purple">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/><path d="M12 7v5l3 3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+          </div>
+          <div class="stat-card-value" id="stat-avg-tps">—</div>
+          <div class="stat-card-label">Average TPS</div>
+        </div>
+
+        <div class="panel stat-card">
+          <div class="stat-card-head">
+            <div class="stat-card-icon amber">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M12 8v4l2.5 2.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/></svg>
+            </div>
+          </div>
+          <div class="stat-card-value" id="stat-last-sync">—</div>
+          <div class="stat-card-label">Last Synced</div>
+        </div>
+      </div>
+
+      <div class="panel card">
+        <div class="card-head">
+          <h3>Servers</h3>
+          <span class="muted" style="margin-bottom:0;font-size:12px">Updates every 15s</span>
+        </div>
+        <div class="server-list" id="server-list">
+          <div class="empty-state" style="padding:40px 20px">
+            <p>Loading server status…</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="layout.js"></script>
+<script>
+function tpsClass(tps){
+  if (tps >= 18) return 'good';
+  if (tps >= 15) return 'warn';
+  return 'bad';
+}
+
+async function loadServerStatus(){
+  const listEl = document.getElementById('server-list');
+  try {
+    const res = await fetch('/api/server-status');
+    const data = await res.json();
+    const servers = data.servers || [];
+
+    document.getElementById('stat-total-players').textContent = (data.total_players ?? 0).toLocaleString();
+    document.getElementById('stat-online-count').textContent = `${data.online_count ?? 0}/${data.total_count ?? 0}`;
+
+    const onlineServers = servers.filter(s => s.online);
+    if (onlineServers.length > 0) {
+      const avgTps = onlineServers.reduce((sum, s) => sum + s.tps, 0) / onlineServers.length;
+      document.getElementById('stat-avg-tps').textContent = avgTps.toFixed(1);
+    } else {
+      document.getElementById('stat-avg-tps').textContent = '—';
+    }
+
+    const mostRecentSync = servers.reduce((max, s) => Math.max(max, s.synced_at || 0), 0);
+    document.getElementById('stat-last-sync').textContent = mostRecentSync ? fmtRelative(mostRecentSync) : '—';
+
+    if (servers.length === 0) {
+      listEl.innerHTML = '<div class="empty-state" style="padding:40px 20px"><div class="icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M3 12h4l2-7 4 14 2-7h6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div><h3>No server data yet</h3><p>Once the bot starts syncing server_status, every server will show up here.</p></div>';
+      return;
+    }
+
+    listEl.innerHTML = servers.map(s => {
+      const dotClass = s.online ? 'online' : 'offline';
+      const meta = s.online
+        ? `${s.players.toLocaleString()}/${s.max_players.toLocaleString()} players · updated ${fmtRelative(s.updated_at)}`
+        : `Offline · last seen ${fmtRelative(s.updated_at)}`;
+      const tpsLabel = s.online ? `${s.tps.toFixed(1)} TPS` : 'Offline';
+      const tpsCls = s.online ? tpsClass(s.tps) : 'bad';
+
+      return `
+        <div class="server-row">
+          <span class="dot ${dotClass}"></span>
+          <div class="server-row-info">
+            <div class="server-row-name">${escapeHtml(s.name)}</div>
+            <div class="server-row-meta">${meta}</div>
+          </div>
+          <span class="server-row-tps ${tpsCls}">${tpsLabel}</span>
+        </div>
+      `;
+    }).join('');
+  } catch {
+    listEl.innerHTML = '<div class="empty-state" style="padding:40px 20px"><p>Could not load server status.</p></div>';
+  }
+}
+
+(async function(){
+  const user = await initLayout('server-status');
+  if (!user) return;
+
+  loadServerStatus();
+  setInterval(loadServerStatus, 15000);
+})();
+</script>
+</body>
+</html>
